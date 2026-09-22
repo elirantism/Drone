@@ -6,24 +6,24 @@ loop at 250 Hz, and drives four ESCs over 250 Hz PWM.
 
 ## Hardware
 
-| Part | Notes |
-| --- | --- |
+| Part              | Notes                                                                                                                         |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Flight controller | Teensy 4.0 / 4.1 (uses `analogWriteFrequency`, `analogWriteResolution`, and the `PulsePosition` library, all Teensy-specific) |
-| IMU | MPU-6050 on I2C address `0x68`, 400 kHz bus |
-| Receiver | Any RC receiver with a PPM (CPPM) sum-signal output |
-| ESCs | 4x PWM ESCs, 1000-2000 us throttle range |
+| IMU               | MPU-6050 on I2C address `0x68`, 400 kHz bus                                                                                   |
+| Receiver          | Any RC receiver with a PPM (CPPM) sum-signal output                                                                           |
+| ESCs              | 4x PWM ESCs, 1000-2000 us throttle range                                                                                      |
 
 ### Pinout
 
-| Pin | Function |
-| --- | --- |
-| 1 | Motor 1 (front right) |
-| 2 | Motor 2 (rear right) |
-| 3 | Motor 3 (rear left) |
-| 4 | Motor 4 (front left) |
-| 13 | Built-in LED, lit once arming completes |
-| 14 | PPM input from the receiver |
-| 18 / 19 | I2C SDA / SCL to the MPU-6050 |
+| Pin     | Function                                |
+| ------- | --------------------------------------- |
+| 1       | Motor 1 (front right)                   |
+| 2       | Motor 2 (rear right)                    |
+| 3       | Motor 3 (rear left)                     |
+| 4       | Motor 4 (front left)                    |
+| 13      | Built-in LED, lit once arming completes |
+| 14      | PPM input from the receiver             |
+| 18 / 19 | I2C SDA / SCL to the MPU-6050           |
 
 Motors are mixed for an X-frame layout: the motor positions above follow from the
 signs in `applyMotorOutputs()`. Diagonal pairs counter-rotate, so 1 and 3 spin one
@@ -34,12 +34,12 @@ the first spin-up.
 
 The sketch reads the PPM stream into `receiverValue[]` in channel order:
 
-| Index | Channel |
-| --- | --- |
-| 0 | Roll |
-| 1 | Pitch |
-| 2 | Throttle |
-| 3 | Yaw |
+| Index | Channel  |
+| ----- | -------- |
+| 0     | Roll     |
+| 1     | Pitch    |
+| 2     | Throttle |
+| 3     | Yaw      |
 
 ## Build and flash
 
@@ -52,6 +52,7 @@ The sketch reads the PPM stream into `receiverValue[]` in channel order:
 ## How it works
 
 `setup()`:
+
 - Wakes the MPU-6050 (clears the sleep bit in `PWR_MGMT_1`) and sets the ESC PWM
   frequency to 250 Hz.
 - Averages 2000 gyro samples to measure the resting bias on each axis, and stores it
@@ -92,32 +93,3 @@ float dConstantYaw = 0.0f;
 
 These are a starting point for one particular frame. Retune them for yours: props off,
 craft restrained, one axis at a time.
-
-## Repository layout
-
-```
-drone.ino        Flight controller sketch - all flight code currently lives here
-src/proto/       Shared packet structs (sensor and motor telemetry) for an
-                 off-board simulator / HIL harness
-src/control/     Reserved for the control code as it is split out of the sketch
-src/hal/         Reserved for the hardware abstraction layer
-```
-
-`src/` is scaffolding for an in-progress refactor that moves the control loop out of
-the sketch and behind a hardware abstraction layer, so the same PID code can run
-against the simulator as against the real airframe.
-
-## Safety
-
-This is a hobby flight controller with no failsafe, no altitude hold, and no
-self-leveling - it is pure rate (acro) mode. Always remove the propellers when
-testing on the bench, and make sure the throttle is at minimum before connecting the
-battery.
-
-Two things to be aware of before flying it:
-
-- The arming wait in `setup()` does not currently block on the throttle stick (see
-  above), so the only thing keeping the motors at idle is the sub-1050 us cut in the
-  mixer.
-- There is no receiver-loss handling. If the PPM signal drops out, `receiverValue[]`
-  simply holds its last values and the motors keep running.
